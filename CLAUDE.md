@@ -4,10 +4,16 @@ Independent HTT project. Do not edit, use or reference the personal Command Cent
 
 ## Status (keep this honest)
 
-- Built and tested locally as a private shared app: Netlify (static hosting plus one Function) and Postgres (Neon is the intended host).
-- Not deployed. No Netlify site, Neon project, Google OAuth client or production environment variable has been created or linked by Claude.
-- Google sign-in code exists and is tested against a local fake identity provider only. Real Google sign-in is unverified until Cristina creates an OAuth client and deploys.
-- Do not describe the app as live, deployed or authenticated until that has been verified.
+- Private shared app: Netlify (static hosting plus one Function) and Neon Postgres.
+- **Live in production** at https://htt-ai-hub.netlify.app. Deployed by Cristina on 2026-10-29 with `netlify deploy --build --prod` from commit `bbbd950`. Manual CLI deploy: no GitHub repository is connected to Netlify, so there are no preview or branch deploys.
+- **Database:** production Neon branch, migrated (001, 002), seeded as version 1, allowlist loaded with the three approved users and two admins. All run by Cristina with `.env.production`. The dev branch is separate.
+- **Sign-in:** a separate production Google OAuth client in the HTT Google Cloud project (Internal audience, `openid` and `email` only). Cristina signed in successfully on the live site.
+- **Verified on the live site:** `/api/tree` returns 401 signed out, `/` redirects to the sign-in page, `/app.js` returns 401 signed out, `/auth/dev-login` returns 404.
+- **Netlify variables (Production):** `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, `APP_ORIGIN`, `NODE_VERSION`.
+- **Open, not verified:** Meagan and Lauren have not signed in, so Internal-audience sign-in for their accounts is untested. Live browser checks (Users screen, removing the leftover Newsletter open-position tile, persistence, two-window conflict, History, Export backup) may still be pending. Security headers on the public page were not confirmed. No independent review was done (Cristina chose to skip it). Code has not been pushed; the intended remote is `skinesti/htt-ai-hub` (private), pushed only on Cristina's explicit approval.
+- Claude created, linked and deployed nothing: every Netlify, Neon and Google step was done by Cristina.
+- Do not describe anything in "Open, not verified" as done until Cristina confirms it.
+- Moving to HTT's own accounts: see MIGRATION.md.
 
 ## Project exception (from Cristina, 2026-10-28)
 
