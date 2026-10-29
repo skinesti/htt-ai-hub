@@ -1,6 +1,6 @@
 # Moving to HTT's own accounts
 
-A checklist for moving the app from Cristina's personal GitHub, Netlify and Neon to HTT-owned accounts. No code changes are expected. Never put a value, connection string or email in this file or any committed file.
+A checklist for moving the app from Cristina's personal GitHub (`skinesti/htt-ai-hub`, private), Netlify and Neon to HTT-owned accounts. No code changes are expected. Never put a value, connection string or email in this file or any committed file.
 
 What moves and what does not: the Export backup carries the current tree only. History (earlier versions), the user list and the user audit trail stay in the old database. Keep the old Neon project read-only until the new site is confirmed, so its history remains available.
 
@@ -15,7 +15,7 @@ What moves and what does not: the Export backup carries the current tree only. H
 - [ ] Create a private repository in HTT's GitHub organization.
 - [ ] Add it as a remote and push (Cristina runs every push herself).
 - [ ] Give access only to the people who need it.
-- [ ] If `skinesti/htt-ai-hub` was ever pushed, archive or delete it only after the new site is confirmed.
+- [ ] Archive or delete `skinesti/htt-ai-hub` only after the new site is confirmed.
 
 ## 2. Database (new Neon project)
 
