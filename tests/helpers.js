@@ -6,14 +6,15 @@ import { SignJWT, createLocalJWKSet, exportJWK, generateKeyPair } from 'jose';
 import { createApp } from '../server/app.js';
 import { createPool } from '../server/db.js';
 import { runMigrations } from '../server/migrations.js';
-import { seedTree, upsertUser } from '../server/store.js';
+import { seedTree } from '../server/store.js';
+import { applyAllowlistEntry } from '../server/users.js';
 import { prepare } from '../shared/model.js';
 
 export const ADMIN_URL = process.env.TEST_ADMIN_DATABASE_URL || 'postgres://postgres@127.0.0.1:54329/postgres';
 export const SEED_RAW = readFileSync(new URL('../seed/htt-ai-hub-team-tree.json', import.meta.url), 'utf8');
 export const seed = () => JSON.parse(SEED_RAW);
 export const ORIGIN = 'https://team-tree.example.test';
-export const USERS = { a: 'approved.one@example.test', b: 'approved.two@example.test', unlisted: 'not.listed@example.test' };
+export const USERS = { a: 'approved.one@example.test', b: 'approved.two@example.test', admin1: 'admin.one@example.test', admin2: 'admin.two@example.test', unlisted: 'not.listed@example.test' };
 
 export async function createTestDatabase() {
   const name = `htt_test_${process.pid}_${Date.now()}`;
@@ -25,8 +26,10 @@ export async function createTestDatabase() {
   const pool = createPool(url);
   await runMigrations(pool, fileURLToPath(new URL('../db/migrations/', import.meta.url)));
   await seedTree(pool, prepare(seed()));
-  await upsertUser(pool, { email: USERS.a, name: 'Tester One' });
-  await upsertUser(pool, { email: USERS.b, name: 'Tester Two' });
+  await applyAllowlistEntry(pool, { email: USERS.a, name: 'Tester One' });
+  await applyAllowlistEntry(pool, { email: USERS.b, name: 'Tester Two' });
+  await applyAllowlistEntry(pool, { email: USERS.admin1, name: 'Admin One', admin: true });
+  await applyAllowlistEntry(pool, { email: USERS.admin2, name: 'Admin Two', admin: true });
   return {
     url, pool,
     async drop() {
@@ -56,7 +59,7 @@ export async function createFakeProvider() {
   return provider;
 }
 
-export const CONFIG = { databaseUrl: 'unused', sessionSecret: 'test-secret-'.padEnd(48, 'x'), googleClientId: 'client-123', googleClientSecret: 'shh', appOrigin: ORIGIN };
+export const CONFIG = { databaseUrl: 'unused', sessionSecret: 'test-secret-'.padEnd(48, 'x'), googleClientId: 'client-123', googleClientSecret: 'shh', appOrigin: ORIGIN, allowedEmailDomains: 'example.test' };
 
 export async function createTestApp() {
   const db = await createTestDatabase();

@@ -21,11 +21,11 @@ export async function createSession(pool, email) {
 export async function lookupSession(pool, token) {
   if (!token) return { status: 'none' };
   const { rows } = await pool.query(
-    `SELECT s.email, u.display_name, u.active FROM sessions s LEFT JOIN app_users u ON u.email = s.email
+    `SELECT s.email, u.display_name, u.active, u.is_admin FROM sessions s LEFT JOIN app_users u ON u.email = s.email
      WHERE s.token_hash = $1 AND s.expires_at > now()`, [hashToken(token)]);
   if (!rows[0]) return { status: 'none' };
   if (!rows[0].active) return { status: 'inactive' };
-  return { status: 'ok', user: { email: rows[0].email, name: displayName(rows[0].display_name, rows[0].email) } };
+  return { status: 'ok', user: { email: rows[0].email, name: displayName(rows[0].display_name, rows[0].email), admin: rows[0].is_admin === true } };
 }
 
 export async function deleteSession(pool, token) {
@@ -89,14 +89,4 @@ export async function seedTree(pool, data) {
   });
 }
 
-export async function upsertUser(pool, { email, name }) {
-  await pool.query(
-    `INSERT INTO app_users (email, display_name, active) VALUES ($1, $2, true)
-     ON CONFLICT (email) DO UPDATE SET display_name = EXCLUDED.display_name, active = true, updated_at = now()`, [email, name || '']);
-}
-
-export async function setUserActive(pool, email, active) {
-  const { rowCount } = await pool.query('UPDATE app_users SET active = $2, updated_at = now() WHERE email = $1', [email, active]);
-  if (!active) await pool.query('DELETE FROM sessions WHERE email = $1', [email]);
-  return rowCount > 0;
-}
+// User management (allowlist, admins, audit) lives in server/users.js.

@@ -9,7 +9,8 @@ Names only. Never commit values. Set production values in Netlify (site settings
 | `GOOGLE_CLIENT_ID` | Netlify Functions | Google OAuth client ID (Web application). |
 | `GOOGLE_CLIENT_SECRET` | Netlify Functions | Google OAuth client secret. |
 | `APP_ORIGIN` | Netlify Functions | The app's exact origin, for example `https://example.netlify.app` (no trailing slash). Used for the sign-in redirect and the Origin check. |
-| `ALLOWLIST_EMAILS` | Local script only (optional) | Alternative to `seed/allowlist.local.json` for `scripts/allow-user.js`. Format: `Name <email>, Name <email>`. |
+| `ALLOWED_EMAIL_DOMAINS` | Netlify Functions; local scripts (optional) | Comma-separated email domains allowed on the Users screen and in `scripts/allow-user.js`. Leave unset to allow only the HTT domain. Set it only to allow other domains on purpose. |
+| `ALLOWLIST_EMAILS` | Local script only (optional) | Alternative to `seed/allowlist.local.json` for `scripts/allow-user.js`. Format: `Name <email>, Name <email>`. Cannot mark admins; use `--grant-admin`. |
 
 Google OAuth client settings: application type Web application; authorized redirect URI `<APP_ORIGIN>/auth/callback`; scopes `openid` and `email` only. An Internal audience limits sign-in to the HTT Google Workspace; the app's allowlist still decides who gets in.
 

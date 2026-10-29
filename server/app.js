@@ -5,6 +5,7 @@ import { HttpError, checkCsrf, cookie, error, json, parseCookies, readJson, redi
 import { OAUTH_COOKIE, OAUTH_SECONDS, SESSION_COOKIE, SESSION_SECONDS, openState, randomToken, sealState, signValue, verifySigned } from './session.js';
 import { authorizationUrl, verifyIdToken } from './oidc.js';
 import * as store from './store.js';
+import * as users from './users.js';
 import { ValidationError, prepare } from '../shared/model.js';
 
 const SHELL_PATHS = ['/', '/app.js', '/app.css', '/shared/model.js'];
@@ -101,7 +102,31 @@ export function createApp(options) {
     const user = await requireUser(request);
     const pool = db();
 
-    if (path === '/api/session' && method === 'GET') return json({ name: user.name, email: user.email });
+    if (path === '/api/session' && method === 'GET') return json({ name: user.name, email: user.email, admin: user.admin });
+
+    if (path === '/api/users') {
+      if (!user.admin) throw new HttpError(403, 'Only admins can manage users.');
+      const domains = users.allowedDomains(config.allowedEmailDomains);
+      const listing = async () => json({ ...(await users.listUsers(pool)), me: user.email, allowedDomains: domains });
+      if (method === 'GET') return listing();
+      if (method === 'POST') {
+        const body = await readJson(request);
+        if (!body || typeof body !== 'object' || Object.keys(body).some(k => !['email', 'name'].includes(k))) throw new HttpError(400, 'Invalid request.');
+        await users.addUser(pool, { actorEmail: user.email, email: users.cleanEmail(body.email, domains), name: users.cleanName(body.name) });
+        return listing();
+      }
+      if (method === 'PATCH') {
+        const body = await readJson(request);
+        if (!body || typeof body !== 'object' || Object.keys(body).some(k => !['email', 'name', 'active', 'admin'].includes(k))) throw new HttpError(400, 'Invalid request.');
+        for (const k of ['active', 'admin']) if (body[k] !== undefined && typeof body[k] !== 'boolean') throw new HttpError(400, 'Invalid request.');
+        const email = String(body.email ?? '').trim().toLowerCase();
+        if (!email || email.length > users.EMAIL_MAX) throw new HttpError(400, 'Invalid request.');
+        const changes = { active: body.active, admin: body.admin, name: body.name === undefined ? undefined : users.cleanName(body.name) };
+        await users.updateUser(pool, { actorEmail: user.email, email, changes });
+        return listing();
+      }
+      return error(405, 'Not allowed.');
+    }
 
     if (path === '/api/tree' && method === 'GET') {
       const current = await store.getCurrent(pool);

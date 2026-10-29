@@ -16,6 +16,7 @@ A private, shared team tree for Her Time Therapy: people, AI assistants, categor
 - **Shared data:** one current tree document (JSONB) with a version number, plus an append-only history of every version (who, when, why).
 - **No silent overwrites:** each save sends the version it started from. If someone else saved first, the server refuses (409) and returns the latest data. The editor shows a conflict message, keeps the draft and loads the latest; save again to apply.
 - **Backup and restore:** Export backup downloads the current tree as JSON. Import backup checks the file, asks for confirmation in the editor, then saves it as a new version. History lists every version; any approved user can restore one, which saves it as a new version. Nothing is deleted.
+- **Users screen (admins only):** add people (name and an address in the allowed domain), switch them on or off, rename them, and grant or remove admin. Nobody can switch themselves off or change their own admin access, the last active admin can never be removed (also enforced by the database, so scripts and direct SQL cannot do it either), users are never deleted, and the list is limited to 50. Every change is recorded in an append-only audit table and shown under Recent changes. Admins are set initially with `scripts/allow-user.js` (`"admin": true` in the gitignored allowlist file), which also handles recovery with `--grant-admin`.
 - **Browser storage** only remembers the Show filter choice. Older browser-saved copies of the tree are not read.
 
 ## Repository layout
@@ -46,6 +47,9 @@ All routes need a signed-in, approved user (401 signed out, 403 not approved). R
 | `GET /api/tree` | Current tree, version, who and when |
 | `GET /api/tree/version` | Current version only |
 | `PUT /api/tree` | Save `{ baseVersion, data, reason }` (`save`, `undo` or `import`) |
+| `GET /api/users` | Admins only: users, recent changes, allowed domains |
+| `POST /api/users` | Admins only: add `{ email, name }` |
+| `PATCH /api/users` | Admins only: change `{ email, name?, active?, admin? }` for someone else |
 | `GET /api/revisions` | History: version, who, when, reason, restored from |
 | `GET /api/revisions/:version` | One past version |
 | `POST /api/revisions/:version/restore` | Restore `{ baseVersion }` as a new version |

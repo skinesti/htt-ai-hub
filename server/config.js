@@ -10,7 +10,8 @@ export function loadConfig(env = process.env) {
     sessionSecret: env.SESSION_SECRET || '',
     googleClientId: env.GOOGLE_CLIENT_ID || '',
     googleClientSecret: env.GOOGLE_CLIENT_SECRET || '',
-    appOrigin: (env.APP_ORIGIN || '').replace(/\/+$/, '')
+    appOrigin: (env.APP_ORIGIN || '').replace(/\/+$/, ''),
+    allowedEmailDomains: env.ALLOWED_EMAIL_DOMAINS || ''
   };
 }
 

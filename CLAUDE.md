@@ -41,6 +41,7 @@ This supersedes the earlier HTT Drive, connector and account instructions for th
 
 - `shared/model.js` holds `validate` and `normalize` for both browser and server. The server is authoritative. Keep the existing rules (cycles, references, https-only links, 250 nodes, 50 categories, 100 skills and 100 artifacts per category, 4000-character descriptions) plus field length limits, unknown-field rejection and the 2 MB body limit.
 - Every save sends `baseVersion`. A version mismatch returns 409 with the latest data; the client shows the conflict in the editor, keeps the draft and loads the latest. No automatic merging. Undo, import and restore are normal versioned saves.
+- Users screen: admin-only on the server (403 otherwise). No self switch-off or self admin change; the last active admin is protected by app code and a database trigger; users are never deleted; `user_audit` is append-only. Initial admins come only from the gitignored allowlist file via `scripts/allow-user.js`, never from source, tests or docs.
 - `tree_revisions` is append-only (enforced by a database trigger). Restore creates a new revision with `restored_from`.
 - Every app page, script and API route checks the session and the allowlist on the server. The public folder holds only the data-free sign-in page.
 - The dev login exists only in `scripts/dev-server.js` (localhost only). `scripts/build-check.js` fails the build if it is reachable or enabled.
