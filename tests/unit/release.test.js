@@ -3,22 +3,61 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { checkProductionUrl } from '../../scripts/env-secret.js';
+import { checkProductionUrl, envDatabaseUrl } from '../../scripts/env-secret.js';
 import { localSecretValues } from '../../scripts/secret-values.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const url = (host, query) => ['postgresql://owner', `pw-dummy-123@${host}/neondb${query}`].join(':');
 
-test('production connection string must be a pooled Neon string with sslmode=verify-full', () => {
-  assert.deepEqual(checkProductionUrl(url('ep-x-1-pooler.us-east-2.aws.neon.tech', '?sslmode=verify-full&channel_binding=require')), { host: 'ep-x-1-pooler.us-east-2.aws.neon.tech', sslmode: 'verify-full' });
-  assert.throws(() => checkProductionUrl(url('ep-x-1-pooler.example.test', '?sslmode=require')), /must use sslmode=verify-full \(found sslmode=require\)/);
+const POOLED = 'ep-x-1-pooler.us-east-2.aws.neon.tech';
+const noSecret = fn => { try { fn(); } catch (e) { assert.doesNotMatch(e.message, /pw-dummy-123|owner|ep-x|ep-dev/); return e; } assert.fail('expected a refusal'); };
+
+test('production connection string must be a pooled Neon string; verify-full is kept as pasted', () => {
+  const pasted = url(POOLED, '?sslmode=verify-full&channel_binding=require');
+  assert.deepEqual(checkProductionUrl(pasted), { value: pasted, host: POOLED, label: 'ep-x-1-pooler', sslmode: 'verify-full', changedFrom: null });
   assert.throws(() => checkProductionUrl(url('ep-x-1.example.test', '?sslmode=verify-full')), /pooled connection string/);
   assert.throws(() => checkProductionUrl(url('127.0.0.1', '?sslmode=verify-full')), /local database/);
   assert.throws(() => checkProductionUrl('postgresql://owner@ep-x-pooler.example.test/db?sslmode=verify-full'), /no password/);
   assert.throws(() => checkProductionUrl('has space'), /does not look like/);
-  for (const bad of [url('ep-x-pooler.example.test', '?sslmode=require'), url('ep-x.example.test', '?sslmode=verify-full')]) {
-    try { checkProductionUrl(bad); } catch (e) { assert.doesNotMatch(e.message, /pw-dummy-123|owner/); }
+  noSecret(() => checkProductionUrl(url('ep-x.example.test', '?sslmode=verify-full')));
+});
+
+test('sslmode=require is rewritten to verify-full; other parameters and the password are kept', () => {
+  const r = checkProductionUrl(url(POOLED, '?sslmode=require&channel_binding=require'));
+  assert.equal(r.changedFrom, 'sslmode=require');
+  assert.equal(r.value, url(POOLED, '?sslmode=verify-full&channel_binding=require'));
+  assert.equal(new URL(r.value).password, 'pw-dummy-123');
+  assert.equal(checkProductionUrl(url(POOLED, '?sslmode=prefer')).value, url(POOLED, '?sslmode=verify-full'));
+});
+
+test('a string with no sslmode gets sslmode=verify-full', () => {
+  const r = checkProductionUrl(url(POOLED, '?channel_binding=require'));
+  assert.equal(r.changedFrom, 'no sslmode');
+  assert.equal(r.value, url(POOLED, '?channel_binding=require&sslmode=verify-full'));
+  assert.equal(checkProductionUrl(url(POOLED, '')).value, url(POOLED, '?sslmode=verify-full'));
+});
+
+test('sslmode=disable and any other value are refused without showing the string', () => {
+  for (const mode of ['disable', 'allow', 'verify-ca', 'bogus']) {
+    const e = noSecret(() => checkProductionUrl(url(POOLED, '?sslmode=' + mode)));
+    assert.match(e.message, new RegExp(`sslmode=${mode} is not allowed.*Nothing saved`));
   }
+  assert.match(noSecret(() => checkProductionUrl(url(POOLED, '?sslmode=require&sslmode=disable'))).message, /more than one sslmode/);
+});
+
+test('the host in the local .env (dev branch) is refused unless --force', () => {
+  const prod = url(POOLED, '?sslmode=verify-full');
+  for (const devHost of [POOLED, 'ep-x-1.us-east-2.aws.neon.tech', 'EP-X-1-POOLER.us-east-2.aws.neon.tech']) {
+    const devUrl = url(devHost, '?sslmode=verify-full');
+    assert.match(noSecret(() => checkProductionUrl(prod, { devUrl })).message, /this looks like the dev branch/);
+    assert.equal(checkProductionUrl(prod, { devUrl, force: true }).value, prod);
+  }
+  assert.equal(checkProductionUrl(prod, { devUrl: url('ep-dev-9-pooler.us-east-2.aws.neon.tech', '?sslmode=verify-full') }).value, prod);
+  assert.equal(checkProductionUrl(prod, { devUrl: 'postgresql://localhost:54329/htt' }).value, prod);
+  assert.equal(checkProductionUrl(prod, { devUrl: 'not a url' }).value, prod);
+  const envText = ['# local', 'SESSION_SECRET=abc', `DATABASE_URL="${url(POOLED, '?sslmode=verify-full')}"`].join('\n');
+  assert.equal(envDatabaseUrl(envText), url(POOLED, '?sslmode=verify-full'));
+  assert.equal(envDatabaseUrl('SESSION_SECRET=abc'), '');
 });
 
 test('secret values come from .env and every .env.* file, including connection-string passwords; local databases are skipped', () => {
