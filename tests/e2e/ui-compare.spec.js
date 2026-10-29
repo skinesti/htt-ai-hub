@@ -43,10 +43,21 @@ function diff(name, a, b) {
 for (const width of [1440, 1024, 390]) {
   test(`tree and editor match the original at ${width}px`, async ({ browser }) => {
     const o = await openOriginal(browser, width), s = await openShared(browser, width);
+    // Cards now wrap instead of scrolling, so the tree is compared card by card: same sections, same
+    // cards in the same order, and every card the same size with no visible pixel difference.
+    const structure = page => page.locator('#teamGroups .person-group').evaluateAll(els => els.map(e => [...e.querySelectorAll('.compact-category')].map(c => c.dataset.category)));
     for (const view of ['meagan', 'lauren', 'cristina', '']) {
       await o.selectOption('#showPerson', view); await s.selectOption('#showPerson', view);
-      const result = diff(`${width}-tree-${view || 'all'}`, await o.locator('#teamGroups').screenshot(), await s.locator('#teamGroups').screenshot());
-      expect(result, `tree, view ${view || 'All Team'}`).toEqual({ pixels: 0 });
+      await o.mouse.move(0, 0); await s.mouse.move(0, 0);
+      const so = await structure(o), ss = await structure(s);
+      expect(ss, `sections and card order, view ${view || 'All Team'}`).toEqual(so);
+      for (let i = 0; i < so.length; i++) {
+        for (let j = 0; j < so[i].length; j++) {
+          const pick = page => page.locator('#teamGroups .person-group').nth(i).locator('.compact-category').nth(j);
+          const result = diff(`${width}-${view || 'all'}-s${i}-${so[i][j]}`, await pick(o).screenshot(), await pick(s).screenshot());
+          expect(result, `card ${so[i][j]} in section ${i}, view ${view || 'All Team'}`).toEqual({ pixels: 0 });
+        }
+      }
     }
     await o.selectOption('#showPerson', 'meagan'); await s.selectOption('#showPerson', 'meagan');
     await o.click('.compact-profile[data-person="meagan"] .name-button');

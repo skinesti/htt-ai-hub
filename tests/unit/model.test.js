@@ -53,3 +53,17 @@ test('remote connection strings must use sslmode=verify-full', async () => {
   assert.equal(sslModeNote('postgres://postgres@127.0.0.1:54329/htt_dev'), null);
   assert.doesNotMatch(sslModeNote(remote('require')), /ep-x|:p@/);
 });
+
+test('category limit is 200: 200 categories pass, 201 are rejected', () => {
+  const withCategories = total => {
+    const d = seed();
+    for (let i = d.categories.length; i < total; i++) d.categories.push({ id: 'extra-' + i, name: 'Extra ' + i, members: [], skills: [], artifacts: [] });
+    return d;
+  };
+  assert.equal(LIMITS.categories, 200);
+  assert.equal(prepare(withCategories(200)).categories.length, 200);
+  assert.throws(() => prepare(withCategories(201)), { message: 'Invalid or oversized backup' });
+  assert.equal(LIMITS.nodes, 250);
+  assert.equal(LIMITS.skillsPerCategory, 100);
+  assert.equal(LIMITS.artifactsPerCategory, 100);
+});

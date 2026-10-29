@@ -5,7 +5,7 @@
 
 export const LIMITS = Object.freeze({
   nodes: 250,
-  categories: 50,
+  categories: 200,
   skillsPerCategory: 100,
   artifactsPerCategory: 100,
   description: 4000,
