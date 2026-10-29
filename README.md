@@ -1,39 +1,83 @@
 # HTT AI Hub · Team Tree
 
-Local preview: http://127.0.0.1:5407/ while the local preview server is running. Development source: index.html and app.js. Standalone HTML copies embed the same script; keep documents/ alongside them for the Senior Analyst Profile download.
+A private, shared team tree for Her Time Therapy: people, AI assistants, categories, skills and artifacts, edited in a right-hand Team editor.
 
-## Current structure and editing
+## Status
 
-There is one category-under-person view. Show is only a viewing filter: Everyone, Meagan, Lauren, Cristina or an AI assistant. Grouped/Reporting mode switches have been removed. Person cards and category names are selections, not inline text fields. All editing happens in the right-hand Team editor. The Editing selector chooses a person, category or skill independently of the viewing filter. Close and Cancel leave unsaved form changes unapplied; Save updates the tree. Changing the shown person closes the editor.
+- **Local only.** Built and tested on this computer. Nothing is deployed.
+- No Netlify site, Neon project or Google OAuth client is connected yet. Google sign-in has only been tested against a local stand-in.
+- Built under Cristina's personal accounts (private GitHub `skinesti/htt-ai-hub`, Netlify, Neon) by project exception, and kept portable so it can move to HTT accounts without a rebuild. HTT Google Drive is not part of this build.
 
-Person editor: name, title, type, reporting manager, optional additional manager, AI-only Profile URL, and labeled checkboxes for category assignments. Unchecking one category removes only that person's assignment. Category editor: name, assigned-people checkboxes, skills, Remove from the shown person only, and a separate clearly labeled Delete category everywhere section. Skills are edited in the same panel. Add EE/Add AI opens an existing-person assignment form with a separate Create new profile action; it does not silently create duplicates. Creating from a category carries the visible person's manager context. General creation in Everyone starts with no manager. Every save validates graph cycles, references, links and payload limits.
+## How it works
 
-Newsletter has been removed from Lauren; Marketing and Social Media remain. Newsletter still exists as an unassigned category, accessible in the editor and in Everyone. Client Care is also unassigned. Meagan retains Business Operations, Clinical Supervision, Finance, Human Resources and Insurance. Cristina retains Admin, Human Resources and Web Site, with Executive Assistant as her title. Andrea and unused default positions have been removed. Senior Analyst is an AI assistant reporting directly to Meagan, displayed beside her with an arrow toward Meagan.
+- **Stack:** static sign-in page plus one Netlify Function (Node), and a Postgres database (Neon). Plain SQL migrations. No Supabase, no Netlify Identity.
+- **Sign-in:** Google (OpenID Connect, scopes `openid email`). The server checks the verified email against the `app_users` allowlist. Sessions are random tokens in a signed, HttpOnly, Secure, SameSite=Lax cookie, stored hashed in the database, and expire after 7 days. Sign out ends the session on the server.
+- **Private by default:** the only public files are the sign-in page, its CSS and script, and `robots.txt`. The app page, scripts and data are served only to signed-in, approved users. Everything is `no-store` and `noindex`.
+- **Shared data:** one current tree document (JSONB) with a version number, plus an append-only history of every version (who, when, why).
+- **No silent overwrites:** each save sends the version it started from. If someone else saved first, the server refuses (409) and returns the latest data. The editor shows a conflict message, keeps the draft and loads the latest; save again to apply.
+- **Backup and restore:** Export backup downloads the current tree as JSON. Import backup checks the file, asks for confirmation in the editor, then saves it as a new version. History lists every version; any approved user can restore one, which saves it as a new version. Nothing is deleted.
+- **Browser storage** only remembers the Show filter choice. Older browser-saved copies of the tree are not read.
 
-Shared category appearances refer to one record. People have one profile and may belong to many categories. Reporting and category assignments are separate; neither grants data access. A person's own name is omitted from their own category cards; other members appear as connected name bubbles.
+## Repository layout
 
-## Appearance
+| Path | Purpose |
+|---|---|
+| `app/` | The signed-in app: `index.html`, `app.js`, `app.css` (original design) |
+| `shared/model.js` | Validation and normalization used by both browser and server |
+| `public/` | Data-free sign-in page (the only static files deployed) |
+| `netlify/functions/app.mjs` | Serves the app after the session check, sign-in and the API |
+| `server/` | Routes, sessions, Google sign-in, database queries |
+| `db/migrations/` | Plain SQL schema |
+| `scripts/` | Migrate, seed, allowlist, build check, local database and dev server |
+| `seed/htt-ai-hub-team-tree.json` | Starting data (loaded as version 1) |
+| `documents/` | Senior Analyst introduction source files (kept in the repo, not deployed) |
+| `tests/` | Unit and API tests (`node --test`) and browser tests (Playwright) |
+| `ENVIRONMENT.md` | Environment variable names |
 
-Top name tiles: branded lavender #d0c7d5 with dark plum #3b2f45 text. EE bubbles: #d0c7d5 with #3b2f45 text. AI bubbles: #6e5f7a with white text. AI-only Profile links lead to role descriptions. Skills use separate connected Skill bubbles with optional links. Category buttons remain Add EE, Add AI, Add Skill on one line. Categories remain alphabetical and horizontal, with scrolling at narrow widths.
+## API
 
-## Saving and review
+All routes need a signed-in, approved user (401 signed out, 403 not approved). Requests that change data also need the app's own Origin and the `X-HTT-Request: 1` header.
 
-This is browser-local, with no shared sign-in or Neon connection yet. The save key remains htt-ai-hub-horizontal-members-v4; the filter preference uses its -view suffix. A raw pre-migration browser snapshot is retained once under the -before-panel-editor suffix. Source backups are in .backups/pre-panel-editor/. JSON export/import preserve the same model, existing IDs, memberships, typed profiles, skills, manager relationships and Profile URLs. Undo restores changes from the current session. A failed save rolls back data, rebuilds editor handlers against restored records, and preserves draft fields for correction.
+| Route | Purpose |
+|---|---|
+| `GET /auth/login`, `GET /auth/callback` | Google sign-in (state, nonce, PKCE) |
+| `POST /auth/logout` | Sign out |
+| `GET /api/session` | Who is signed in |
+| `GET /api/tree` | Current tree, version, who and when |
+| `GET /api/tree/version` | Current version only |
+| `PUT /api/tree` | Save `{ baseVersion, data, reason }` (`save`, `undo` or `import`) |
+| `GET /api/revisions` | History: version, who, when, reason, restored from |
+| `GET /api/revisions/:version` | One past version |
+| `POST /api/revisions/:version/restore` | Restore `{ baseVersion }` as a new version |
 
-A separate Sterling-style reviewer used the local role brief and returned Ready for this preview revision after two fixes. See review-notes.md. This is not release approval or a claim that the installed Sterling assistant executed a live cross-chat workflow.
+## Local development
 
-## Netlify + Neon handoff
+Requires Node 20+ and PostgreSQL client tools (`initdb`, `pg_ctl`).
 
-Read CLAUDE.md before development. The chosen stack is Netlify + Neon; no Supabase. Do not publish this local preview as a public substitute for a private shared app. Implement authenticated server-side authorization for every read/write, approved membership, server-only database credentials, schema migrations, immutable revisions, optimistic concurrency/conflict handling, and backup/restore. Verify anonymous and unauthorized denial, cross-device persistence, conflicting edits and restore before approved release. Store profile IDs and category membership relationships; preserve the current UI and single editing panel.
+```sh
+npm install
+npm run db:local                      # throwaway Postgres in .local/ on 127.0.0.1:54329
+export DATABASE_URL=postgres://postgres@127.0.0.1:54329/htt_dev
+npm run migrate && npm run seed && npm run allow-users
+npm run dev                           # http://localhost:8888
+```
 
-Use HTT-owned Git, Netlify and Neon projects when approved. Git is recommended for review, rollback and future ownership transfer, not needed to view this local prototype. Keep ownership separate from the Claude account so Meagan's future work account can use the same app. No repository, database, authentication provider or deployment has been provisioned.
+Sign in locally at `http://localhost:8888/auth/dev-login?email=<approved email>`. The dev login exists only in `scripts/dev-server.js`, binds to localhost and refuses to run on Netlify or with a non-local database. The build check fails if it is enabled or reachable from deployed code.
 
-## Drive and role document
+Tests: `npm test` (needs the local Postgres running) and `npm run test:e2e` (browser tests, including the UI comparison with the original).
 
-Before private HTT Drive work, verify connector identity is the HTT Google account and read the current HTT AI Hub Registry and relevant instructions. The last verified connector was cmprocto@gmail.com, so no shared native Google Doc was created. Generic DOCX, HTML and Markdown role descriptions are in documents/. After correct verification, upload/convert into Google Docs in HTT AI Hub, verify content and actual URL, then configure Senior Analyst's Profile URL. Application membership does not grant Drive access. Do not invent links or change sharing without scoped authorization.
+## Data notes
 
-No deployment or personal Command Center changes have been made. This remains an isolated preview for user review.
+The seed JSON is the source of truth for people and categories. Some older notes described different data; the JSON was kept as is:
 
-## Latest additions
+- Meagan's title is "CEO & Founder".
+- Cristina reports to Meagan.
+- Newsletter is assigned to Lauren.
+- Branding exists (Meagan, Lauren, Cristina) with the HTT Color Palette artifact.
+- Client Care is not present.
+- Meagan is also a member of Web Site and Admin.
+- Senior Analyst's Profile link is the Google Doc URL in the JSON.
 
-Show lists All Team plus human employees (currently Meagan, Lauren and Cristina); AI assistants appear within teams rather than as viewing options. The editor footer has Close, Cancel and Save. Add Artifact is a second-line category action below Add EE / Add AI / Add Skill. Artifacts store id, name, optional HTTPS link and description in category.artifacts, independently from category.skills. They appear as connected Artifact bubbles and are created, edited, moved between categories and removed in the right panel. Artifacts persist in browser save and JSON backups; older records migrate with an empty artifacts array. This is a linked artifact record, not a file-upload or hosting service.
+## Earlier history
+
+The browser-only preview this was built from is in the first commit. `review-notes.md` records the earlier editor review of that preview; it is not release approval.

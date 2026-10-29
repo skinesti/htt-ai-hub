@@ -1,31 +1,54 @@
 # HTT AI Hub Team Tree
 
-Work only in this independent HTT project. Do not edit the personal Command Center.
+Independent HTT project. Do not edit, use or reference the personal Command Center app.
 
-Before private Google Drive work, verify the connected account is the HTT Google account using the connector's account/profile tool. A browser profile is not proof. Stop private Drive operations on an identity mismatch. Read the current HTT AI Hub Registry and relevant instructions before using its files. Do not substitute personal Command Center instructions or Drive files.
+## Status (keep this honest)
 
-Preserve the supplied design and functions. No emojis. Meagan is CEO. Senior Analyst sits to her right and reports directly to her. Lauren and Cristina are peer managers beneath Senior Analyst; each has an unassigned assistant/employee tile. Categories are alphabetical and editable.
+- Built and tested locally as a private shared app: Netlify (static hosting plus one Function) and Postgres (Neon is the intended host).
+- Not deployed. No Netlify site, Neon project, Google OAuth client or production environment variable has been created or linked by Claude.
+- Google sign-in code exists and is tested against a local fake identity provider only. Real Google sign-in is unverified until Cristina creates an OAuth client and deploys.
+- Do not describe the app as live, deployed or authenticated until that has been verified.
 
-Hosting choice: Netlify. Shared database choice: Neon Postgres. Do not use Supabase. This source is currently an offline/browser-local preview; do not describe it as shared or authenticated.
+## Project exception (from Cristina, 2026-10-28)
 
-Before production, implement server-side authenticated reads/writes with explicit approved membership for Meagan, Lauren and Cristina; deny anonymous access and unauthorized edits. Keep Neon credentials in server-only environment variables. Use optimistic concurrency/version checks to prevent overwriting simultaneous edits, durable history/backups, and server-side validation of graph cycles, links and payload limits. Browser localStorage is not shared storage. Verify signed-out denial, unauthorized-account denial, cross-device persistence, conflicting edits and restore before release.
+This supersedes the earlier HTT Drive, connector and account instructions for this project.
 
-Use an HTT-owned Git repository, Netlify team and Neon project where practical. Git is recommended for version history and transfer, not required to view this prototype. Keep infrastructure separate from any Claude login so changing to Meagan's future work Claude account does not require rebuilding the app. Preserve SQL schema/migrations, JSON export/import and an environment-variable inventory for portability.
+- Built under Cristina's personal accounts: Claude, private GitHub repository `skinesti/htt-ai-hub`, Netlify, Neon. Keep code, schema and configuration portable so it can move to HTT's GitHub, Netlify and Neon later with no rebuild. No account-specific values in code.
+- HTT Google Drive is not part of this build. Do not access Google Drive, do not verify an HTT connector, do not create Google Docs. Leave the Senior Analyst Profile URL exactly as it is in the data. Do not open that link.
+- `documents/` stays in the repo but is not deployed.
 
-The generic Senior Analyst introduction is in documents/. Upload/convert it into a native Google Doc in HTT AI Hub only after verifying the connector. Verify saved content and actual file URL, then replace the tile's local download URL. Do not invent a Drive link or change sharing without scoped authorization.
+## Data
 
-Do not publish, deploy, connect production credentials, change live Command Center files or alter sharing until scoped approval. A Senior Analyst Ready finding does not provide release approval. Only CEO approval can terminate a project, with alternatives and consequences first.
+- The shared database is the data source of truth. It was seeded from `seed/htt-ai-hub-team-tree.json`.
+- Do not "correct" people, titles, reporting lines or category memberships to match these docs. The docs govern design and behavior only.
+- Preserve the JSON model and IDs: nodes (id, name, title, parent, secondaryParents, category, intro, x, y, kind), categories (id, name, members as ID lists, skills, artifacts), and the top-level flags.
 
-Current category memberships are listed in README.md. Andrea is a peer manager with title unconfirmed. Cristina is Executive Assistant. There are NO category owners or owner lanes. Render categories in one alphabetical horizontal row with Add member selecting existing people or assistants. Store membership IDs as a many-to-many relationship, separate from reporting lines. Never duplicate a person record to assign them to another category.
+## Design and behavior (preserve exactly)
 
-Latest approved design direction: build out compact category rows beneath each Team Member. Omit the section person's own name from their cards; show other assigned people. Team Members are humans; AI Assistants are typed AI profiles. Use Add Employee and Add AI Assistant separately. Only AI names may link to introduction files. Open positions are not presumed to be either type. See the current README, which supersedes earlier visual-trial notes.
+- No emojis. Write "Web site" as two words with a capital W. No em dashes.
+- One category-under-person view. Show is only a viewing filter: All Team plus human employees. AI assistants appear within teams.
+- Person cards and category names are selections. All editing, adding, assigning, category removal, global deletion, skills and artifacts happen in the right-hand Team editor with explicit Save. Editor footers: Close, Cancel, Save.
+- Use labeled checkboxes for memberships, never native multi-select. Unchecking removes only that assignment.
+- Category memberships are ID lists, separate from reporting lines. Never duplicate a person record to assign them to another category. A person's own name is omitted from their own category cards.
+- Team Members are humans; AI Assistants are typed AI profiles; open positions are neither. Add EE and Add AI choose existing people first, with a separate Create new profile action. Creating from a category carries the shown person's manager context.
+- Top name tiles: #d0c7d5 with #3b2f45 text. EE bubbles: #d0c7d5 with #3b2f45 text. AI bubbles: #6e5f7a with white text. Only AI profiles have Profile links.
+- Skills and Artifacts are category records (id, name, optional https URL, description) shown as connected bubbles. Add EE, Add AI, Add Skill on one line; Add Artifact on a second line.
+- Senior Analyst is displayed beside Meagan with an arrow toward her.
+- Categories are alphabetical and horizontal, scrolling at narrow widths.
+- A failed save rolls back, rebuilds the editor against the restored records and keeps the draft fields.
 
-Latest presentation: remove unused default blank positions beside Lauren and Cristina. Render assigned employees and AI assistants as compact connected name bubbles. EE background #d0c7d5, AI background #6e5f7a, both white text. AI role-document links are labeled Profile separately from the name, superseding the earlier name-link instruction. Human employees have no Profile links. Keep Senior Analyst beside Meagan.
+## Shared app rules
 
-Latest user revision supersedes earlier styling and personnel: remove Andrea; retain Client Care unassigned. EE bubbles use #d0c7d5 with #3b2f45 text for readability. AI bubbles retain #6e5f7a with white text.
+- `shared/model.js` holds `validate` and `normalize` for both browser and server. The server is authoritative. Keep the existing rules (cycles, references, https-only links, 250 nodes, 50 categories, 100 skills and 100 artifacts per category, 4000-character descriptions) plus field length limits, unknown-field rejection and the 2 MB body limit.
+- Every save sends `baseVersion`. A version mismatch returns 409 with the latest data; the client shows the conflict in the editor, keeps the draft and loads the latest. No automatic merging. Undo, import and restore are normal versioned saves.
+- `tree_revisions` is append-only (enforced by a database trigger). Restore creates a new revision with `restored_from`.
+- Every app page, script and API route checks the session and the allowlist on the server. The public folder holds only the data-free sign-in page.
+- The dev login exists only in `scripts/dev-server.js` (localhost only). `scripts/build-check.js` fails the build if it is reachable or enabled.
 
-Add Skill is a category-level UI action, not an automatic skill installation. Persist skill id/name/optional HTTPS URL/description in the shared category record; validate and migrate old records with empty skills. Skill bubbles are separate from typed people profiles. Top name tiles use lavender #d0c7d5 and dark plum #3b2f45 text.
+## Boundaries
 
-Current structure supersedes earlier prototypes: one category-under-person view. Remove Grouped/Reporting mode switches. Show is a viewing filter. All editing, addition, assignment, category removal, global deletion, and skill editing must use the right-hand Team editor with explicit Save. Use labeled checkboxes for memberships, never native multi-select. Newsletter is unassigned from Lauren; preserve it as an available category. Preserve the same storage key and IDs. Rebuild editor callbacks after rollback while retaining drafts; carry category person context when creating a profile. See current README.md and review-notes.md.
-
-Preserve Add Artifact as a second-line category action. Its right-panel editor stores name, optional HTTPS URL and description under category.artifacts. Include artifacts in server validation, migrations, shared persistence and revision history. The Show selector is All Team plus human employees only. Close belongs beside Cancel and Save in editor footers.
+- Never run git push, deploy, create or link Netlify sites or Neon projects, or set production environment variables. Cristina does these after approving a specific release. Local commits are fine.
+- Never print or echo `.env`. Never put a secret in code, docs, chat or reports.
+- Approved emails live only in `seed/allowlist.local.json` (gitignored) or the `ALLOWLIST_EMAILS` variable. Never commit them.
+- Test against the local Postgres (`npm run db:local`) or a Neon dev branch, never production. Do not change live data.
+- Read `restart.md` and `backlog.md` at the start of a session.

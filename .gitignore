@@ -20,3 +20,10 @@ HTT AI Hub Team Tree.html
 
 # OS
 .DS_Store
+
+# Generated at build time
+server/generated/
+
+# Local working notes (not committed)
+restart.md
+backlog.md

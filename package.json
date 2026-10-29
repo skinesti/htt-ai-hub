@@ -1,0 +1,30 @@
+{
+  "name": "htt-ai-hub-team-tree",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTT AI Hub Team Tree: private shared app on Netlify Functions and Postgres (Neon).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build-shell.js && node scripts/build-check.js",
+    "db:local": "sh scripts/local-db.sh",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "allow-users": "node scripts/allow-user.js",
+    "dev": "node scripts/dev-server.js",
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "jose": "^5.10.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0"
+  }
+}
