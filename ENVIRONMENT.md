@@ -1,6 +1,6 @@
 # Environment variables
 
-Names only. Never commit values. Set production values in Netlify (site settings, environment variables, Functions scope; `NODE_VERSION` needs the Builds scope). Production currently has six: `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, `APP_ORIGIN`, `NODE_VERSION`. Locally, keep values in `.env` (gitignored) as `NAME=value` lines.
+Names only. Never commit values. Set production values in Netlify (site settings, environment variables, Functions scope; `NODE_VERSION` needs the Builds scope). Production was set up by Cristina with six (names as reported, not independently checked): `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, `APP_ORIGIN`, `NODE_VERSION`. Locally, keep values in `.env` (gitignored) as `NAME=value` lines.
 
 | Name | Where | Purpose |
 |---|---|---|

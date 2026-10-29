@@ -5,12 +5,12 @@ A private, shared team tree for Her Time Therapy: people, AI assistants, categor
 ## Status
 
 - **Live in production** at https://htt-ai-hub.netlify.app. Deployed by Cristina on 2026-10-29 with `netlify deploy --build --prod` from commit `bbbd950`. Manual CLI deploy: no GitHub repository is connected to Netlify, so there are no preview or branch deploys.
-- **Database:** production Neon branch, migrated (001, 002), seeded as version 1, allowlist loaded with the three approved users and two admins. All run by Cristina with `.env.production`. The dev branch is separate.
-- **Sign-in:** a separate production Google OAuth client in the HTT Google Cloud project (Internal audience, `openid` and `email` only). Cristina signed in successfully on the live site.
+- **Database:** production Neon branch migrated, seeded and allowlisted by Cristina with `.env.production`. Details as reported by Cristina, not independently checked: migrations 001 and 002, seeded as version 1, three approved users and two admins. The dev branch is separate.
+- **Sign-in:** Cristina signed in successfully on the live site. Setup as reported by Cristina, not independently checked: a separate production Google OAuth client in the HTT Google Cloud project (Internal audience, `openid` and `email` only).
 - **Verified on the live site:** `/api/tree` returns 401 signed out, `/` redirects to the sign-in page, `/app.js` returns 401 signed out, `/auth/dev-login` returns 404.
-- **Netlify variables (Production):** `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, `APP_ORIGIN`, `NODE_VERSION`.
+- **Netlify variables (Production), as reported by Cristina, not independently checked:** `DATABASE_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET`, `APP_ORIGIN`, `NODE_VERSION`.
 - **Open, not verified:** Meagan and Lauren have not signed in, so Internal-audience sign-in for their accounts is untested. Live browser checks (Users screen, removing the leftover Newsletter open-position tile, persistence, two-window conflict, History, Export backup) may still be pending. Security headers on the public page were not confirmed. No independent review was done (Cristina chose to skip it). Code has not been pushed; the intended remote is `skinesti/htt-ai-hub` (private), pushed only on Cristina's explicit approval.
-- Built under Cristina's personal accounts (private GitHub `skinesti/htt-ai-hub`, Netlify, Neon) by project exception, and kept portable so it can move to HTT accounts without a rebuild. HTT Google Drive is not part of this build.
+- Built under Cristina's personal accounts (Netlify, Neon; intended private GitHub repository `skinesti/htt-ai-hub`, not yet pushed) by project exception, and kept portable so it can move to HTT accounts without a rebuild. HTT Google Drive is not part of this build.
 
 Moving to HTT's own accounts: see [MIGRATION.md](MIGRATION.md).
 
