@@ -20,3 +20,5 @@ body.meagan-trial header p,body.meagan-trial header nav,body.meagan-trial #statu
 @media(min-width:1000px){body:has(#editPanel:not([hidden])) #teamGroups{margin-right:0}body:has(#editPanel:not([hidden])) #treeArea{margin-right:380px}}
 .zoom-control select{min-width:0;width:auto}
 @media(max-width:650px){.header-actions .zoom-control{width:auto;margin:0 0 6px}}
+/* Phones only: each category card is as tall as its own content (one card per row there). */
+@media(max-width:650px){.grouped-categories{grid-auto-rows:auto;align-items:start}}

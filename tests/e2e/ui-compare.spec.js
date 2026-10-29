@@ -40,6 +40,15 @@ function diff(name, a, b) {
   return { pixels };
 }
 
+const BOTTOM_EDGE = 10; // card border radius (9 px) plus its 1 px border
+function diffTop(name, a, b) {
+  const A = PNG.sync.read(a), B = PNG.sync.read(b);
+  if (A.width !== B.width || B.height > A.height) return { sizeMismatch: `${A.width}x${A.height} vs ${B.width}x${B.height}`, pixels: Infinity };
+  const h = B.height - BOTTOM_EDGE, crop = img => { const out = new PNG({ width: img.width, height: h }); img.data.copy(out.data, 0, 0, img.width * h * 4); return PNG.sync.write(out); };
+  if (B.height < A.height) test.info().annotations.push({ type: 'phone-height', description: `${name}: ${A.height}px tall before, ${B.height}px now` });
+  return diff(name, crop(A), crop(B));
+}
+
 for (const width of [1440, 1024, 390]) {
   test(`tree and editor match the original at ${width}px`, async ({ browser }) => {
     const o = await openOriginal(browser, width), s = await openShared(browser, width);
@@ -54,7 +63,10 @@ for (const width of [1440, 1024, 390]) {
       for (let i = 0; i < so.length; i++) {
         for (let j = 0; j < so[i].length; j++) {
           const pick = page => page.locator('#teamGroups .person-group').nth(i).locator('.compact-category').nth(j);
-          const result = diff(`${width}-${view || 'all'}-s${i}-${so[i][j]}`, await pick(o).screenshot(), await pick(s).screenshot());
+          const name = `${width}-${view || 'all'}-s${i}-${so[i][j]}`;
+          // On phones (650 px and narrower) cards are only as tall as their own content, so they may be
+          // shorter than the original: same width, no taller, and identical down to the rounded bottom edge.
+          const result = width <= 650 ? diffTop(name, await pick(o).screenshot(), await pick(s).screenshot()) : diff(name, await pick(o).screenshot(), await pick(s).screenshot());
           expect(result, `card ${so[i][j]} in section ${i}, view ${view || 'All Team'}`).toEqual({ pixels: 0 });
         }
       }
