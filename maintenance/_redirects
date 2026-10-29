@@ -1,0 +1,2 @@
+# Every address, including /api/* and /auth/*, shows the offline page. Existing files (the page, CSS, robots.txt) are served as they are.
+/*  /index.html  200

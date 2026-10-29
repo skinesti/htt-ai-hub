@@ -21,3 +21,7 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Cross-Origin-Opener-Policy = "same-origin"
     Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+
+# Scans the finished function bundle and publish folder for local secret values (see scripts/bundle-check.js).
+[[plugins]]
+  package = "./plugins/bundle-check"

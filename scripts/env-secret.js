@@ -1,6 +1,8 @@
 // Adds secrets to the local .env without showing them on screen or in any log.
 //   node scripts/env-secret.js google    prompt for GOOGLE_CLIENT_ID (visible) and GOOGLE_CLIENT_SECRET (hidden)
 //   node scripts/env-secret.js session   generate SESSION_SECRET (refuses to replace an existing one unless --replace)
+//   node scripts/env-secret.js production-db   paste the Neon PRODUCTION pooled string (hidden) into .env.production;
+//                                       requires sslmode=verify-full; prints only the host and sslmode
 // Options: --file <path> (default: .env in the project root), --replace
 // Existing lines for the same name are replaced; all other lines are kept. The file is set to owner-only (600).
 import { randomBytes } from 'node:crypto';
@@ -8,11 +10,26 @@ import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const SAFE_VALUE = /^[A-Za-z0-9._~+/=-]+$/;
+const URL_VALUE = /^[A-Za-z0-9._~+/=:@?&%-]+$/; // connection strings: no spaces, quotes or #
+
+// Checks a pasted production connection string. Returns { host, sslmode } (never the password) or throws.
+export function checkProductionUrl(value) {
+  if (!value || !URL_VALUE.test(value)) throw new Error('That does not look like a connection string (no spaces, quotes or # allowed). Nothing saved.');
+  let url;
+  try { url = new URL(value); } catch { throw new Error('That is not a valid connection string. Nothing saved.'); }
+  if (!['postgres:', 'postgresql:'].includes(url.protocol)) throw new Error('It must start with postgresql://. Nothing saved.');
+  if (!url.password) throw new Error('It has no password; copy the full string from Neon. Nothing saved.');
+  if (['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname)) throw new Error('That is a local database, not production. Nothing saved.');
+  if (!url.hostname.includes('-pooler.')) throw new Error('Use the pooled connection string (its host contains "-pooler"). Nothing saved.');
+  const sslmode = url.searchParams.get('sslmode');
+  if (sslmode !== 'verify-full') throw new Error(`It must use sslmode=verify-full (found ${sslmode ? 'sslmode=' + sslmode : 'no sslmode'}). Nothing saved.`);
+  return { host: url.hostname, sslmode };
+}
 
 // Returns new .env text with NAME=value set once (replacing any earlier NAME= lines in place).
-export function upsertEnv(text, name, value) {
+export function upsertEnv(text, name, value, allowed = SAFE_VALUE) {
   if (!/^[A-Z][A-Z0-9_]*$/.test(name)) throw new Error('Invalid variable name.');
-  if (!SAFE_VALUE.test(value)) throw new Error('Value has characters that are not allowed.');
+  if (!allowed.test(value)) throw new Error('Value has characters that are not allowed.');
   const lines = text ? text.replace(/\n$/, '').split('\n') : [];
   let done = false;
   const out = [];
@@ -26,9 +43,9 @@ export function upsertEnv(text, name, value) {
 
 export const hasVar = (text, name) => (text || '').split('\n').some(l => l.startsWith(name + '='));
 
-function writeEnv(file, name, value) {
+function writeEnv(file, name, value, allowed) {
   const text = existsSync(file) ? readFileSync(file, 'utf8') : '';
-  writeFileSync(file, upsertEnv(text, name, value), { mode: 0o600 });
+  writeFileSync(file, upsertEnv(text, name, value, allowed), { mode: 0o600 });
   chmodSync(file, 0o600);
 }
 
@@ -77,6 +94,22 @@ async function main() {
     return;
   }
 
+  if (command === 'production-db') {
+    // Default target is .env.production (gitignored), never .env.
+    const target = fileArg >= 0 ? file : fileURLToPath(new URL('../.env.production', import.meta.url));
+    const existing = existsSync(target) ? readFileSync(target, 'utf8') : '';
+    if (hasVar(existing, 'DATABASE_URL') && !replace) {
+      console.log(`${target.split('/').pop()} already has DATABASE_URL; nothing changed. Use --replace to overwrite it.`);
+      return;
+    }
+    if (!process.stdin.isTTY) throw new Error('Run this in a terminal so the connection string can be pasted with hidden input.');
+    const value = (await ask('Neon PRODUCTION pooled connection string (hidden, paste and press Return): ', { hidden: true })).trim();
+    const { host, sslmode } = checkProductionUrl(value);
+    writeEnv(target, 'DATABASE_URL', value, URL_VALUE);
+    console.log(`Saved DATABASE_URL to ${target.split('/').pop()} (owner-only). Host: ${host} | sslmode: ${sslmode}`);
+    return;
+  }
+
   if (command === 'google') {
     if (!process.stdin.isTTY) throw new Error('Run this in a terminal so the secret can be typed with hidden input.');
     const id = (await ask('Google OAuth client ID (shown): ')).trim();
@@ -89,7 +122,7 @@ async function main() {
     return;
   }
 
-  console.log('Usage: node scripts/env-secret.js google | session [--replace] [--file <path>]');
+  console.log('Usage: node scripts/env-secret.js google | session | production-db [--replace] [--file <path>]');
   process.exitCode = 1;
 }
 

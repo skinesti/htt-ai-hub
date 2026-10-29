@@ -7,6 +7,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localSecretValues } from './secret-values.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const problems = [];
@@ -26,7 +27,7 @@ const read = file => { try { return readFileSync(file, 'utf8'); } catch { return
 for (const name of ['DEV_LOGIN', 'ENABLE_DEV_LOGIN']) if (process.env[name]) problems.push(`environment: ${name} is set; dev login is not allowed in a build`);
 
 const deployable = [
-  ...walk(join(root, 'public')), ...walk(join(root, 'netlify')), ...walk(join(root, 'server')),
+  ...walk(join(root, 'public')), ...walk(join(root, 'maintenance')), ...walk(join(root, 'netlify')), ...walk(join(root, 'server')),
   ...walk(join(root, 'shared')), ...walk(join(root, 'app')), join(root, 'netlify.toml'),
   ...process.argv.slice(2).flatMap(dir => walk(dir))
 ];
@@ -39,13 +40,8 @@ for (const file of deployable) {
 let repoFiles;
 try { repoFiles = execSync('git ls-files -co --exclude-standard', { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean).map(f => join(root, f)); }
 catch { repoFiles = walk(root).filter(f => !/node_modules|\.git\/|\.local\//.test(f)); }
-const secretValues = ['DATABASE_URL', 'SESSION_SECRET', 'GOOGLE_CLIENT_SECRET'].map(n => process.env[n]).filter(v => v && v.length >= 8);
-const envFile = join(root, '.env');
-if (existsSync(envFile)) for (const m of read(envFile).matchAll(/postgres(?:ql)?:\/\/[^\s'"]+/g)) secretValues.push(m[0]);
-if (existsSync(envFile)) for (const line of read(envFile).split('\n')) {
-  const m = line.match(/^(SESSION_SECRET|GOOGLE_CLIENT_SECRET|DATABASE_URL)=(.+)$/);
-  if (m && m[2].trim().length >= 8) secretValues.push(m[2].trim());
-}
+// Every value from .env and any .env.* file (for example .env.production), plus secret environment variables.
+const secretValues = localSecretValues(root);
 const allowFile = join(root, 'seed/allowlist.local.json');
 const approvedEmails = existsSync(allowFile) ? JSON.parse(read(allowFile)).map(u => String(u.email).toLowerCase()) : [];
 const PATTERNS = [
@@ -60,7 +56,7 @@ for (const file of new Set([...repoFiles, ...deployable])) {
   const text = read(file);
   // Third-party libraries contain PEM markers as parsing constants; they are still checked for real secret values below.
   for (const [re, rule] of PATTERNS) if (!(file.includes('/node_modules/') && rule === 'private key') && re.test(text)) flag(file, rule);
-  if (secretValues.some(v => text.includes(v))) flag(file, 'secret value from environment or .env');
+  for (const { value, source } of secretValues) if (text.includes(value)) flag(file, 'contains a value from ' + source);
   if (approvedEmails.some(e => text.toLowerCase().includes(e))) flag(file, 'approved email address');
 }
 
@@ -68,7 +64,7 @@ for (const file of new Set([...repoFiles, ...deployable])) {
 const seed = JSON.parse(read(join(root, 'seed/htt-ai-hub-team-tree.json')));
 const terms = [...seed.nodes.flatMap(n => [n.id, n.name]), ...seed.categories.map(c => c.name), ...seed.categories.flatMap(c => [...c.skills, ...c.artifacts].map(i => i.name))]
   .filter(t => t && t.length >= 4);
-for (const file of walk(join(root, 'public'))) {
+for (const file of [...walk(join(root, 'public')), ...walk(join(root, 'maintenance'))]) {
   const text = read(file);
   for (const term of new Set(terms)) if (new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text)) { flag(file, 'team data in a public file'); break; }
 }

@@ -74,6 +74,16 @@ Sign in locally at `http://localhost:8888/auth/dev-login?email=<approved email>`
 
 Tests: `npm test` (needs the local Postgres running) and `npm run test:e2e` (browser tests, including the UI comparison with the original).
 
+## Maintenance page
+
+`maintenance/` is a data-free offline page with no functions. Publishing it over the app takes the app offline: every address shows the page, and nothing can reach the database. Data, users, history and Netlify settings are untouched. Publish it only when you decide to take the app offline, from the project folder:
+
+```sh
+netlify deploy --prod --dir=maintenance --functions=maintenance/no-functions
+```
+
+To bring the app back, publish the last app deploy in Netlify (Deploys, choose it, "Publish deploy"), or run `netlify deploy --build --prod` again.
+
 ## Data notes
 
 The seed JSON is the source of truth for people and categories. Some older notes described different data; the JSON was kept as is:
