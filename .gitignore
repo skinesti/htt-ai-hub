@@ -1,0 +1,22 @@
+# Secrets and local-only data
+.env
+.env.*
+seed/allowlist.local.json
+
+# Dependencies and tool output
+node_modules/
+.netlify/
+.local/
+test-results/
+playwright-report/
+dist/
+
+# Not part of the repo (approved to skip)
+HTT AI Hub - Categories and Members.html
+HTT AI Hub - Horizontal Categories - R4.html
+HTT AI Hub Team Tree.html
+.backups/
+*.png
+
+# OS
+.DS_Store

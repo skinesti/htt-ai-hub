@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "name": "HTT AI Hub",
+  "nodes": [
+    {
+      "id": "meagan",
+      "name": "Meagan",
+      "title": "CEO & Founder",
+      "parent": null,
+      "secondaryParents": [],
+      "category": null,
+      "intro": "",
+      "x": 615,
+      "y": 30,
+      "kind": "employee"
+    },
+    {
+      "id": "analyst",
+      "name": "Senior Analyst",
+      "title": "Independent review",
+      "parent": "meagan",
+      "secondaryParents": [],
+      "category": null,
+      "intro": "https://docs.google.com/document/d/1TNS4PR0judNOI_580NaUaAjclj9eOHuv/edit?usp=sharing&ouid=114247159996460369985&rtpof=true&sd=true",
+      "x": 955,
+      "y": 30,
+      "kind": "ai"
+    },
+    {
+      "id": "lauren",
+      "name": "Lauren",
+      "title": "Title to be confirmed",
+      "parent": "analyst",
+      "secondaryParents": [],
+      "category": null,
+      "intro": "",
+      "x": 395,
+      "y": 275,
+      "kind": "employee"
+    },
+    {
+      "id": "cristina",
+      "name": "Cristina",
+      "title": "Executive Assistant",
+      "parent": "meagan",
+      "secondaryParents": [],
+      "category": null,
+      "intro": "",
+      "x": 1175,
+      "y": 275,
+      "kind": "employee"
+    },
+    {
+      "id": "lauren-assistant",
+      "name": "Newsletter",
+      "title": "Newsletter Assistant",
+      "parent": "lauren",
+      "secondaryParents": [],
+      "category": null,
+      "intro": "",
+      "x": 395,
+      "y": 520,
+      "kind": "unassigned"
+    }
+  ],
+  "categories": [
+    {
+      "id": "category-0",
+      "name": "Business Operations",
+      "members": [
+        "meagan"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-1",
+      "name": "Clinical Supervision",
+      "members": [
+        "meagan"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-2",
+      "name": "Finance",
+      "members": [
+        "meagan"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-3",
+      "name": "Human Resources",
+      "members": [
+        "meagan",
+        "cristina"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-4",
+      "name": "Insurance",
+      "members": [
+        "meagan"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-5",
+      "name": "Social Media",
+      "members": [
+        "lauren"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-6",
+      "name": "Marketing",
+      "members": [
+        "lauren"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-7",
+      "name": "Newsletter",
+      "members": [
+        "lauren"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "category-9",
+      "name": "Web Site",
+      "members": [
+        "cristina",
+        "meagan"
+      ],
+      "skills": [
+        {
+          "id": "c994b6a1-8f44-4ef7-bd3b-18165fdb0282",
+          "name": "htt-product-builder",
+          "url": "",
+          "description": "Transforms an uploaded digital product into a complete Wix shop listing, including three thumbnails, product name, description, SEO, \"What's Inside\" details, and researched pricing. Following approval, creates a hidden draft listing in Wix."
+        }
+      ],
+      "artifacts": []
+    },
+    {
+      "id": "category-10",
+      "name": "Admin",
+      "members": [
+        "cristina",
+        "meagan"
+      ],
+      "skills": [],
+      "artifacts": []
+    },
+    {
+      "id": "f3802347-5c37-4d41-a938-88ac42175f2a",
+      "name": "Branding",
+      "members": [
+        "meagan",
+        "lauren",
+        "cristina"
+      ],
+      "skills": [],
+      "artifacts": [
+        {
+          "id": "0773f3ee-234c-44d2-8bc4-0bc8f1897922",
+          "name": "HTT Color Palette",
+          "url": "https://docs.google.com/document/d/1oWryB-pwsHqqXmG1wRn5nLVPRfGSUxS6znFVpuEC90E/edit?usp=drive_link",
+          "description": ""
+        }
+      ]
+    }
+  ],
+  "structure": "category-members-v3",
+  "layoutVersion": 4,
+  "reviewerPlacementRestored": true,
+  "andreaRemoved": true
+}
