@@ -27,3 +27,6 @@ server/generated/
 # Local working notes (not committed)
 restart.md
 backlog.md
+
+# Fixed folder for local test files (dummy values only)
+.tmp-test/

@@ -42,6 +42,10 @@ catch { repoFiles = walk(root).filter(f => !/node_modules|\.git\/|\.local\//.tes
 const secretValues = ['DATABASE_URL', 'SESSION_SECRET', 'GOOGLE_CLIENT_SECRET'].map(n => process.env[n]).filter(v => v && v.length >= 8);
 const envFile = join(root, '.env');
 if (existsSync(envFile)) for (const m of read(envFile).matchAll(/postgres(?:ql)?:\/\/[^\s'"]+/g)) secretValues.push(m[0]);
+if (existsSync(envFile)) for (const line of read(envFile).split('\n')) {
+  const m = line.match(/^(SESSION_SECRET|GOOGLE_CLIENT_SECRET|DATABASE_URL)=(.+)$/);
+  if (m && m[2].trim().length >= 8) secretValues.push(m[2].trim());
+}
 const allowFile = join(root, 'seed/allowlist.local.json');
 const approvedEmails = existsSync(allowFile) ? JSON.parse(read(allowFile)).map(u => String(u.email).toLowerCase()) : [];
 const PATTERNS = [

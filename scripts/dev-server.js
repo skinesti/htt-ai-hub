@@ -70,7 +70,14 @@ export async function startDevServer({ port = 8888, databaseUrl = process.env.DA
     }
   });
   await new Promise(resolve => server.listen(port, '127.0.0.1', resolve));
-  if (log) console.log(`Dev server: ${origin} (local only). Sign in at ${origin}/auth/dev-login?email=<approved email>`);
+  if (log) {
+    console.log(`Dev server: ${origin} (local only).`);
+    console.log(`Dev login (localhost only): ${origin}/auth/dev-login?email=<approved email>`);
+    console.log(config.googleClientId && config.googleClientSecret
+      ? `Google sign-in: ${origin}/auth/login (redirect URI ${origin}/auth/callback)`
+      : 'Google sign-in: not configured (run `node scripts/env-secret.js google` to add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env).');
+    if (!process.env.SESSION_SECRET) console.log('Session secret: temporary for this run (run `node scripts/env-secret.js session` to keep sign-ins across restarts).');
+  }
   return { origin, close: async () => { await new Promise(r => server.close(r)); await pool.end(); } };
 }
 
