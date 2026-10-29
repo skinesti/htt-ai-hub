@@ -4,7 +4,7 @@ Names only. Never commit values. Set production values in Netlify (site settings
 
 | Name | Where | Purpose |
 |---|---|---|
-| `DATABASE_URL` | Netlify Functions; local scripts | Postgres connection string. On Neon use the pooled connection string with `sslmode=require`. Server only. |
+| `DATABASE_URL` | Netlify Functions; local scripts | Postgres connection string. Server only. On Neon use the pooled connection string and set `sslmode=verify-full` (not `require`) in every copy: `.env`, Netlify and any HTT environment later. Neon's other parameters, such as `channel_binding=require`, can stay. The app logs a warning naming the setting (never the value) when a remote string lacks `verify-full`. |
 | `SESSION_SECRET` | Netlify Functions | Random string, at least 32 characters, used to sign cookies. Changing it signs everyone out. |
 | `GOOGLE_CLIENT_ID` | Netlify Functions | Google OAuth client ID (Web application). |
 | `GOOGLE_CLIENT_SECRET` | Netlify Functions | Google OAuth client secret. |

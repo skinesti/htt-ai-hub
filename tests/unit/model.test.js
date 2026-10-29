@@ -43,3 +43,13 @@ test('legacy owner/collaborators backups still import (original migration)', () 
   assert.deepEqual(out.categories[0].members, ['meagan', 'cristina']);
   assert.equal('owner' in out.categories[0], false);
 });
+
+test('remote connection strings must use sslmode=verify-full', async () => {
+  const { sslModeNote } = await import('../../server/db.js');
+  const remote = mode => ['postgres://u', `p@ep-x-pooler.example.test/db${mode ? '?sslmode=' + mode : ''}`].join(':');
+  assert.equal(sslModeNote(remote('verify-full')), null);
+  assert.match(sslModeNote(remote('require')), /sslmode=verify-full \(found sslmode=require\)/);
+  assert.match(sslModeNote(remote('')), /found no sslmode/);
+  assert.equal(sslModeNote('postgres://postgres@127.0.0.1:54329/htt_dev'), null);
+  assert.doesNotMatch(sslModeNote(remote('require')), /ep-x|:p@/);
+});

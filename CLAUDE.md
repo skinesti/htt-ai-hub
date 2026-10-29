@@ -49,6 +49,7 @@ This supersedes the earlier HTT Drive, connector and account instructions for th
 
 - Never run git push, deploy, create or link Netlify sites or Neon projects, or set production environment variables. Cristina does these after approving a specific release. Local commits are fine.
 - Never print or echo `.env`. Never put a secret in code, docs, chat or reports.
+- Every remote Postgres connection string (local `.env`, Netlify, later HTT) uses `sslmode=verify-full`, never `require`.
 - Approved emails live only in `seed/allowlist.local.json` (gitignored) or the `ALLOWLIST_EMAILS` variable. Never commit them.
 - Test against the local Postgres (`npm run db:local`) or a Neon dev branch, never production. Do not change live data.
 - Read `restart.md` and `backlog.md` at the start of a session.
